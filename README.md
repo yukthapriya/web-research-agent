@@ -1,5 +1,7 @@
 # Lantern — an AI research agent on Cloudflare
 
+**🔗 Live demo: https://web-research-agent.myukthapriya.workers.dev**
+
 Ask a question. A Cloudflare **Workflow** breaks it into search queries, searches
 the **web**, and uses **Llama 3.3 on Workers AI** to write a short, cited report —
 while a live "research trail" streams each step. Every run is saved per‑session in
