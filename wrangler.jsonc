@@ -1,0 +1,48 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "web-research-agent",
+  "main": "src/server.ts",
+  "compatibility_date": "2026-06-29",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Workers AI — runs Llama 3.3 for planning + synthesis.
+  "ai": {
+    "binding": "AI"
+  },
+
+  // Static frontend (the chat UI). Served first; the Worker handles /api/*.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+
+  // The session Agent is a SQLite-backed Durable Object. It holds each
+  // session's research history (memory) and kicks off Workflows.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ResearchAgent",
+        "class_name": "ResearchAgent"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ResearchAgent"]
+    }
+  ],
+
+  // The durable, multi-step research pipeline (plan -> search -> synthesize).
+  "workflows": [
+    {
+      "name": "research-workflow",
+      "binding": "RESEARCH_WORKFLOW",
+      "class_name": "ResearchWorkflow"
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  }
+}

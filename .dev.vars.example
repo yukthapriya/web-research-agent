@@ -1,0 +1,4 @@
+# Copy to ".dev.vars" for local development (wrangler dev reads it automatically).
+# Get a free key at https://tavily.com (1,000 searches/month, no card).
+# Optional: without it the agent answers from model knowledge instead of live web.
+TAVILY_API_KEY=tvly-your-key-here
