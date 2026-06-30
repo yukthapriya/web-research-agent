@@ -5,8 +5,53 @@ interface ChatMessage {
   content: string;
 }
 
-interface LlamaOutput {
-  response?: string;
+/**
+ * Coerce whatever Workers AI returns into a plain string. The documented shape
+ * is `{ response: string }`, but depending on the model/runtime `response` can
+ * come back nested, OpenAI-style, or as a non-string — so we never assume and
+ * never call string methods on an object.
+ */
+function extractText(out: unknown): string {
+  if (out == null) return "";
+  if (typeof out === "string") return out;
+  if (typeof out !== "object") return String(out);
+
+  const o = out as Record<string, unknown>;
+
+  // Standard Workers AI shape: { response: "..." }
+  if (typeof o.response === "string") return o.response;
+
+  // Nested: { response: { response | content | text: "..." } }
+  if (o.response && typeof o.response === "object") {
+    const r = o.response as Record<string, unknown>;
+    if (typeof r.response === "string") return r.response;
+    if (typeof r.content === "string") return r.content;
+    if (typeof r.text === "string") return r.text;
+  }
+
+  // OpenAI-compatible shape: { choices: [{ message: { content: "..." } }] }
+  if (Array.isArray(o.choices) && o.choices.length > 0) {
+    const msg = (o.choices[0] as Record<string, unknown>)?.message as
+      | Record<string, unknown>
+      | undefined;
+    if (msg && typeof msg.content === "string") return msg.content;
+  }
+
+  // Other occasional keys.
+  if (typeof o.output === "string") return o.output;
+  if (typeof o.result === "string") return o.result;
+  if (typeof o.text === "string") return o.text;
+
+  // Last resort: a non-string `response` (object/array) — serialize it so the
+  // pipeline still receives usable text instead of crashing.
+  if (o.response != null) {
+    try {
+      return JSON.stringify(o.response);
+    } catch {
+      return "";
+    }
+  }
+  return "";
 }
 
 /** Run Llama 3.3 on Workers AI and return the text response. */
@@ -15,12 +60,12 @@ async function runLlama(
   messages: ChatMessage[],
   opts: { maxTokens?: number; temperature?: number } = {},
 ): Promise<string> {
-  const out = (await env.AI.run(MODEL, {
+  const out = await env.AI.run(MODEL, {
     messages,
     max_tokens: opts.maxTokens ?? 1024,
     temperature: opts.temperature ?? 0.4,
-  })) as LlamaOutput;
-  return (out.response ?? "").trim();
+  });
+  return extractText(out).trim();
 }
 
 /**
