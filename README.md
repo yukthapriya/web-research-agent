@@ -3,7 +3,7 @@
 **🔗 Live demo: https://web-research-agent.myukthapriya.workers.dev**
 
 
-## Demo
+## Screenshots
 
 | | |
 |---|---|
